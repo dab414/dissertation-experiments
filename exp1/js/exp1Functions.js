@@ -60,31 +60,7 @@ function createDeckCode(currentCondition) {
 }
 
 
-// CUED TASK SWITCHING DURING DST WRAPPERS
 
-function cuedGenerateStimulus() {
-  currentTaskColor = generateTransition(deckCode[chosenDeckLocation]['pSwitch'], prevTaskColor);
-  currentStim = generateCuedStim();
-  currentTask = taskCueCode[currentTaskColor];
-  error = 0;
-}
-
-function cuedUpdateVars() {
-  // record cued rt
-  cuedRt = new Date() - startTime;
-
-  // stop listening for keys
-  $(document).unbind('keydown.listenForResponseKeys');
-  // code error
-  error = cuedIsError(String(i.which), currentTask, currentStim);
-  // code transition
-  transition = codeTransition(prevTaskColor, currentTaskColor);
-  // update previous task color
-  prevTaskColor = currentTaskColor;
-
-  // record data
-  saveTrialData();
-}
 
 
 

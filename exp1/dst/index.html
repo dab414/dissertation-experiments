@@ -22,7 +22,8 @@ $(document).ready(function(){
 // thresholds
 var cycleThreshold = 2;
 // DEVELOPMENT
-var trialThreshold = 30;
+var trialThreshold = 5;
+var cuedRefreshTrialThreshold = 16;
 
 // parse url args
 var taskCueCode = urlArgsToVar('taskCueCode')=='NONE'? createTaskCue() : urlArgsToVar('taskCueCode');
@@ -34,6 +35,7 @@ var phaseStartTime = Date.now();
 var trialCount = 0;
 var blockCount = 0;
 var cycleCount = 0;
+var cuedRefreshTrialCount = 0;
 
 // not worrying about rsi
 var prevTaskColor = '';
@@ -51,6 +53,10 @@ var cuedRt = new Date();
 var choiceRt = new Date();
 var blockTime = new Date();
 var phaseStartTime = new Date();
+var cuedRefreshRsi = 200;
+var cuedRefreshTrigger = 0;
+var cuedId = 'na';
+
 
 // control conditions
 var conditionOrder = new Array();
@@ -66,6 +72,7 @@ var controlsString = '<p>The blue task is: ' + clientCueCode['blue'] + (clientCu
 // set initial state
 $('#detailSlide').hide();
 $('#controlsFill').html(controlsString);
+$('.keyContainer').html(controlsString);
 $('#keyRemindSlide').hide();
 $('.expSlide').hide();
 $('#blockTransitionSlide').hide();
@@ -121,11 +128,13 @@ function blockTransition() {
   // refresh global vars
   // (counts will always begin at 1)
   trialCount = 0;
+  CuedRefreshTrialCount = 0;
   prevTaskColor = '';
 
   // add instruction vars
   var startingInstructions = '';
   var feedback = '';
+  var cuedRefreshInstructions = '';
 
   // things to do if it's not the first block of the experiment
   if (blockCount) {
@@ -147,7 +156,10 @@ function blockTransition() {
     // conditional instructions for if they're just starting
     if (cycleCount == 0) {
       startingInstructions = '<p>The experiment is broken up into a total of ' + String(4 * cycleThreshold) + ' groups.</p>';
-    } 
+    } else {
+      cuedRefreshTrigger = 1;
+      cuedRefreshInstructions = '<p>You will perform some short cued task trials (without decks) before the next group begins.</p>';
+    }
 
     // if it's not end of experiment
     if (cycleCount < cycleThreshold) {
@@ -157,8 +169,6 @@ function blockTransition() {
 
       // refresh condition order
       conditionOrder = createConditionOrder();
-
-      
 
     // if it is end of experiment
     } else {
@@ -183,14 +193,24 @@ function blockTransition() {
 
 
   // general instructions
-  $('#blockInstructions').html(startingInstructions + feedback + '<p>You are about to perform Group ' + String(blockCount + (cycleCount - 1) * 4) + ' of ' + String(cycleThreshold * 4) + '. Please press "Continue" when you are ready to start this group.</p>');
+  $('#blockInstructions').html(startingInstructions + feedback + '<p>You are about to perform Group ' + String(blockCount + (cycleCount - 1) * 4) + ' of ' + String(cycleThreshold * 4) + '. Please press "Continue" when you are ready to start this group.</p>' + cuedRefreshInstructions);
   $('#blockTransitionSlide').show();
   $('.expSlide').hide();
+  $('.stimSlide').hide();
   $('#startBlock').unbind().click(function(){
-    blockTime = new Date();
     $('#blockTransitionSlide').hide();
-    $('.expSlide').show();
-    runTrial();
+
+    // if it's the first block of a new cycle (but not the first cycle), refresh cued task switching
+    if (cuedRefreshTrigger) {
+      $('.stimSlide').show();
+      cuedRefreshTrigger = 0;
+      cuedRefreshTrial();
+    
+    } else {
+      blockTime = new Date();
+      $('.expSlide').show();
+      runTrial();
+    }
   });
 
 } // end blockTransition()
@@ -250,7 +270,7 @@ function runTrial() {
 function cuedTrial() {
 
   // generate stimulus
-  cuedGenerateStimulus();
+  cuedGenerateStimulus(deckCode[chosenDeckLocation]['pSwitch']);
 
   // update display
   $('#' + chosenDeckLocation + 'CardStim').html('<p>' + currentStim + '</p>');
@@ -268,7 +288,8 @@ function cuedTrial() {
     if ($.inArray(i.which, [74, 75]) + 1) {
 
       // update vars
-      cuedUpdateVars();
+      cuedId = 'inDst';
+      cuedUpdateVars(i.which);
 
       // start error sequence
       if (error) {
@@ -306,59 +327,116 @@ function cuedTrial() {
 function cuedRefreshTrial() {
 
   // generate stimulus
-  cuedGenerateStimulus();
+  cuedGenerateStimulus(0.5);
 
   // update display
   $('.stimContainer').hide();
+  $('.errorContainer').hide();
+  $('.keyContainer').hide();
   $('.stimContainer').html('<p>' + currentStim + '</p>');
   $('.stimContainer').css({'color': currentTaskColor});
+
+
+  // listen for space bar
+  $(document).bind('keydown.listenForSpaceDown', function(e){
+    if (e.which == 32) {
+      $('.keyContainer').show();
+    }
+  });
+  $(document).bind('keyup.listenForSpaceUp', function(e){
+    if (e.which == 32) {
+      $('.keyContainer').hide();
+    }
+  });
   
   // manage rsi
-  setTimeout(function(){}, )
+  setTimeout(function(){
 
-  // start rt timer
-  startTime = new Date();
+    // control display
+    $('.stimContainer').show();
 
-  // start listening for keys
-  $(document).bind('keydown.listenForResponseKeys', function(i){
-    // if response key is one of the valid keys
-    if ($.inArray(i.which, [74, 75]) + 1) {
+    // start rt timer
+    startTime = new Date();
 
-      // update vars
-      cuedUpdateVars();
+    // start listening for keys
+    $(document).bind('keydown.listenForResponseKeys', function(i){
+      // if response key is one of the valid keys
+      if ($.inArray(i.which, [74, 75]) + 1) {
 
-      // start error sequence
-      if (error) {
-        // fill and display feedback
-        $('#' + chosenDeckLocation + 'CardFeedback').html('<p><strong>ERROR</strong></p>');
-        $('#' + chosenDeckLocation + 'CardFeedback').show();
-        
-        // wait 500 ms and prepare for next trial
-        setTimeout(function(){
-          $('#' + chosenDeckLocation + 'CardFeedback').hide();
+        // update vars
+        cuedId = 'refresh';
+        cuedUpdateVars(i.which);
 
-          // check whether the block is over
-          if (trialCount < trialThreshold) {
-            runTrial();
-          } else {
-            blockTransition();
-          }
-        }, 500);
-      } else {
+        // update trial count
+        CuedRefreshTrialCount += 1;
 
-        // check whether the block is over
-        if (trialCount < trialThreshold) {
-          runTrial();
+        // start error sequence
+        if (error) {
+          // fill and display feedback
+          $('.errorContainer').html('<p><strong>ERROR</strong></p>');
+          $('.errorContainer').show();
+          
+          // wait 500 ms and prepare for next trial
+          setTimeout(function(){
+            $('.errorContainer').hide();
+
+            // check whether the refresh is over
+            if (CuedRefreshTrialCount < cuedRefreshTrialThreshold) {
+              cuedRefreshTrial();
+            } else {
+              $('.stimSlide').hide();
+              $('.expSlide').show();
+              blockTime = new Date();
+              runTrial();
+            }
+          }, 500);
         } else {
-          blockTransition();
+
+          // check whether the refresh is over
+          if (CuedRefreshTrialCount < cuedRefreshTrialThreshold) {
+            cuedRefreshTrial();
+          } else {
+            $('.stimSlide').hide();
+            $('.expSlide').show();
+            blockTime = new Date();
+            runTrial();
+          }
         }
+
+
       }
+    }) // end listen for keys
 
+  }, cuedRefreshRsi); // end RSI timeout
 
-    }
-  }) // end listen for keys
+} // end cuedRefreshTrial()
 
-} // end cuedTrial()
+// CUED TASK SWITCHING DURING DST WRAPPERS
+
+function cuedGenerateStimulus(pSwitch) {
+  currentTaskColor = generateTransition(pSwitch, prevTaskColor);
+  currentStim = generateCuedStim();
+  currentTask = taskCueCode[currentTaskColor];
+  error = 0;
+}
+
+function cuedUpdateVars(responseKey) {
+  // record cued rt
+  cuedRt = new Date() - startTime;
+
+  // stop listening for keys
+  $(document).unbind('keydown.listenForResponseKeys');
+  // code error
+  error = cuedIsError(String(responseKey), currentTask, currentStim);
+  // code transition
+  transition = codeTransition(prevTaskColor, currentTaskColor);
+  // update previous task color
+  prevTaskColor = currentTaskColor;
+
+  // record data
+  saveTrialData();
+}
+
 
 
 function saveTrialData() {
@@ -369,6 +447,7 @@ function saveTrialData() {
     'phaseRunTimeMins': Math.round((Date.now() - phaseStartTime) / 1000 / 60),
     'stimulus': currentStim,
     'stimColor': currentTaskColor,
+    'cuedId': cuedId,
     'task': currentTask,
     'condition': currentCondition['name'],
     'difference': difference,
