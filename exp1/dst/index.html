@@ -69,6 +69,7 @@ $('#controlsFill').html(controlsString);
 $('#keyRemindSlide').hide();
 $('.expSlide').hide();
 $('#blockTransitionSlide').hide();
+$('.stimSlide').hide();
 
 
 // button controls
@@ -249,12 +250,7 @@ function runTrial() {
 function cuedTrial() {
 
   // generate stimulus
-  currentTaskColor = generateTransition(deckCode[chosenDeckLocation]['pSwitch'], prevTaskColor);
-  currentStim = generateCuedStim();
-  currentTask = taskCueCode[currentTaskColor];
-
-  // reset error 
-  error = 0;
+  cuedGenerateStimulus();
 
   // update display
   $('#' + chosenDeckLocation + 'CardStim').html('<p>' + currentStim + '</p>');
@@ -271,20 +267,65 @@ function cuedTrial() {
     // if response key is one of the valid keys
     if ($.inArray(i.which, [74, 75]) + 1) {
 
-      // record cued rt
-      cuedRt = new Date() - startTime;
+      // update vars
+      cuedUpdateVars();
 
-      // stop listening for keys
-      $(document).unbind('keydown.listenForResponseKeys');
-      // code error
-      error = cuedIsError(String(i.which), currentTask, currentStim);
-      // code transition
-      transition = codeTransition(prevTaskColor, currentTaskColor);
-      // update previous task color
-      prevTaskColor = currentTaskColor;
+      // start error sequence
+      if (error) {
+        // fill and display feedback
+        $('#' + chosenDeckLocation + 'CardFeedback').html('<p><strong>ERROR</strong></p>');
+        $('#' + chosenDeckLocation + 'CardFeedback').show();
+        
+        // wait 500 ms and prepare for next trial
+        setTimeout(function(){
+          $('#' + chosenDeckLocation + 'CardFeedback').hide();
 
-      // record data
-      saveTrialData();
+          // check whether the block is over
+          if (trialCount < trialThreshold) {
+            runTrial();
+          } else {
+            blockTransition();
+          }
+        }, 500);
+      } else {
+
+        // check whether the block is over
+        if (trialCount < trialThreshold) {
+          runTrial();
+        } else {
+          blockTransition();
+        }
+      }
+
+
+    }
+  }) // end listen for keys
+
+} // end cuedTrial()
+
+function cuedRefreshTrial() {
+
+  // generate stimulus
+  cuedGenerateStimulus();
+
+  // update display
+  $('.stimContainer').hide();
+  $('.stimContainer').html('<p>' + currentStim + '</p>');
+  $('.stimContainer').css({'color': currentTaskColor});
+  
+  // manage rsi
+  setTimeout(function(){}, )
+
+  // start rt timer
+  startTime = new Date();
+
+  // start listening for keys
+  $(document).bind('keydown.listenForResponseKeys', function(i){
+    // if response key is one of the valid keys
+    if ($.inArray(i.which, [74, 75]) + 1) {
+
+      // update vars
+      cuedUpdateVars();
 
       // start error sequence
       if (error) {
@@ -521,6 +562,22 @@ function sendToServer(curId, currentData) {
       </div> <!-- end bottom half -->
 
     </div> <!-- end expSlide -->
+
+
+    <!-- STIMULUS SLIDE -->
+    <!-- a centered column div serving as the parent flex-box -->
+    <div class='stimSlide'>
+      <!-- html filled from js -->
+      <div class='keyContainer'>
+      </div>
+
+      <div class='errorContainer'>
+        <p><strong>ERROR!</strong></p>
+      </div>
+
+      <div class='stimContainer'>
+      </div>
+    </div> <!-- end stimWrapper -->
 
   </div> <!-- end screen -->
 
