@@ -19,10 +19,12 @@ $(document).ready(function(){
 
 // GLOBAL VARS
 // thresholds
+// 17 cued responses per choice
 var responseThreshold = 17;
+// randomly select 4 conditions without replacement across 4 consecutive choices
 var trialThreshold = 4;
-//development
-var cycleThreshold = 1;
+// how many times do all conditions repeat
+var cycleThreshold = 17;
 
 // parse url args
 var taskCueCode = urlArgsToVar('taskCueCode')=='NONE'? createTaskCue() : urlArgsToVar('taskCueCode');
@@ -51,6 +53,8 @@ var cuedRt = new Date();
 var blockTime = new Date();
 var phaseStartTime = new Date();
 var activeSeparator = '';
+var cuedResponseKey = '';
+var choiceResponseKey = '';
 
 
 // control conditions
@@ -191,6 +195,9 @@ function runTrial() {
         // Get the location of choice
         chosenDeckLocation = e.which == 68 ? 'left' : 'right';
 
+        // record choice key
+        choiceResponseKey = e.which == 68 ? 'D' : 'F';
+
         // stop listening for choice keys
         $(document).unbind('keydown.listenForChoiceKeys');
 
@@ -264,6 +271,8 @@ function cuedTrial() {
         prevTaskColor = currentTaskColor;
         // update response count
         responseCount += 1;
+        // record cued key
+        cuedResponseKey = i.which == 74 ? 'J' : 'K';
 
         // record data
         saveTrialData()
@@ -352,6 +361,8 @@ function saveTrialData() {
     'condition': currentCondition['name'],
     'difference': difference,
     'difficulty': difficulty,
+    'cuedResponseKey': cuedResponseKey,
+    'choiceResponseKey': choiceResponseKey,
     'transition': transition,
     'leftDeckId': deckCode['left']['name'],
     'rightDeckId': deckCode['right']['name'],
@@ -366,9 +377,6 @@ function saveTrialData() {
     'choiceRt': choiceRt,
     'cuedRt': cuedRt
   });
-
-  // Development
-  console.log(trialStruct);
 
 }
 
@@ -450,7 +458,7 @@ function sendToServer(curId, currentData) {
           <p class='small'>If you don't have speakers, you can click "See Text Instructions" to read the instructions in text form.</p>
 
         
-          <video id = 'tutorial' width = "460" height = "240" controls>
+          <video id='tutorial' width='510' height='290' controls>
             <source src = "exp2Dst.mp4" type = "video/mp4">
           </video>
         

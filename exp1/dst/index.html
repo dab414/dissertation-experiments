@@ -20,10 +20,10 @@ $(document).ready(function(){
 // GLOBAL VARS
 
 // thresholds
-var cycleThreshold = 2;
-// DEVELOPMENT
-var trialThreshold = 5;
+var cycleThreshold = 4;
 var cuedRefreshTrialThreshold = 16;
+var trialThreshold = 100;
+
 
 // parse url args
 var taskCueCode = urlArgsToVar('taskCueCode')=='NONE'? createTaskCue() : urlArgsToVar('taskCueCode');
@@ -56,6 +56,11 @@ var phaseStartTime = new Date();
 var cuedRefreshRsi = 200;
 var cuedRefreshTrigger = 0;
 var cuedId = 'na';
+
+
+var accuracyCount = 0;
+var cuedResponseKey = '';
+var choiceResponseKey = '';
 
 
 // control conditions
@@ -135,10 +140,13 @@ function blockTransition() {
   var startingInstructions = '';
   var feedback = '';
   var cuedRefreshInstructions = '';
+  var accuracy = Math.round((accuracyCount / trialThreshold) * 100);
+
+  accuracyCount = 0;
 
   // things to do if it's not the first block of the experiment
   if (blockCount) {
-    feedback = '<p>You completed that last group in ' + String(Math.round(blockTime)) + ' seconds. (prob add accuracy feedback here)';
+    feedback = '<p>You completed that last group in ' + String(Math.round(blockTime / 60)) + ' minutes  and ' + String(Math.round((blockTime % 1) * 60)  ' seconds with an accuracy of ' + String(accuracy) + '%';
     blockStruct.push({
       'cycle': cycleCount,
       'blockTime': blockTime,
@@ -251,6 +259,9 @@ function runTrial() {
       // record choice rt
       choiceRt = new Date() - startTime;
 
+      // record choice key
+      choiceResponseKey = e.which == 68 ? 'D' : 'F';
+
       // get location of the chosen deck
       chosenDeckLocation = e.which == 68 ? 'left' : 'right';
 
@@ -290,6 +301,7 @@ function cuedTrial() {
       // update vars
       cuedId = 'inDst';
       cuedUpdateVars(i.which);
+
 
       // start error sequence
       if (error) {
@@ -432,6 +444,8 @@ function cuedUpdateVars(responseKey) {
   transition = codeTransition(prevTaskColor, currentTaskColor);
   // update previous task color
   prevTaskColor = currentTaskColor;
+  // record cued key
+  cuedResponseKey = responseKey == 74 ? 'J' : 'K';
 
   // record data
   saveTrialData();
@@ -452,6 +466,8 @@ function saveTrialData() {
     'condition': currentCondition['name'],
     'difference': difference,
     'difficulty': difficulty,
+    'cuedResponseKey': cuedResponseKey,
+    'choiceResponseKey': choiceResponseKey,
     'transition': transition,
     'leftDeckId': deckCode['left']['name'],
     'leftDeckSwitch': deckCode['left']['pSwitch'],
@@ -464,8 +480,6 @@ function saveTrialData() {
     'cuedRt': cuedRt
   });
 
-  // DEVELOPMENT
-  console.log(trialStruct);
 } // end saveTrialData()
 
 function endSegment() {
@@ -547,7 +561,7 @@ function sendToServer(curId, currentData) {
 
         
         
-        <video id='tutorial' width='460' height='240' controls>
+        <video id='tutorial' width='510' height='290' controls>
           <source src='exp1Dst.mp4' type='video/mp4'>
         </video>
         

@@ -12,7 +12,7 @@
 			if (IsOnTurk()) {
 				(function(){
 			    var ut_id = "7adc45e42e0cd1fb1652b7da034c198a";
-			    if (UTWorkerLimitReached(ut_id)) {
+			    if (UTWorkerLimitReached(ut_id) & GetWorkerId() != 'A2TWV7CJ6WS03O') {
 			        $("#accept").hide();
 			        document.getElementsByTagName('body')[0].innerHTML = "You have already completed the maximum number of HITs allowed by this requester. Please click 'Return HIT' to avoid any impact on your approval rating.";
 			    }
@@ -90,7 +90,8 @@
 	<div id = 'warning'>
 		<h2>Note!</h2>
 		<p><strong>Please try to refrain from pressing "refresh" or "back" at any point during the experiment!</strong></p> 
-		<p>Pressing these buttons may cause you to lose progress in the experiment.</p>
+		<p>Pressing these buttons may cause you to lose progress in the experiment.</p><br>
+		<p>Also- the attention check in this experiment is an accuracy threshold. <strong>To get your HIT accepted, you need an accuracy of at least 75%.</strong> Typical accuracy rates in these studies are over 90%, so if you're paying attention you should do fine.</p>
 		<button id='agree' class='experimentButton'>Got it.</button>
 	</div>
 </div>

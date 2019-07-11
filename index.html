@@ -29,13 +29,14 @@ $(document).ready(function(){
   var prevTaskColor = '';
   var experimentName = 'dissertationExperiment1';
   var phase = 'pracCued';
+  var cuedResponseKey = '';
   // experimentStartTime in MS
   var experimentStartTime = Date.now();
   var rtStartTime = new Date();
 
   // thresholds & manipulations
   // DEVELOPMENT
-  var trialThreshold = 30;
+  var trialThreshold = 160;
   var rsi = 200;
   var errorTimeout = 500;
 
@@ -302,7 +303,7 @@ function sendToServer(curId, currentData) {
           <p class='small'>If you don't have speakers, you can click "See Text Instructions" to read the instructions in text form.</p>
 
         
-          <video id = 'tutorial' width = "460" height = "240" controls>
+          <video id='tutorial' width='510' height='290' controls>
             <source src = "exp1PracCued.mp4" type = "video/mp4">
           </video>
         
