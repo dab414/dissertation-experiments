@@ -22,7 +22,7 @@ $(document).ready(function(){
 // thresholds
 var cycleThreshold = 4;
 var cuedRefreshTrialThreshold = 16;
-var trialThreshold = 100;
+var trialThreshold = 5;
 
 
 // parse url args
@@ -139,14 +139,18 @@ function blockTransition() {
   // add instruction vars
   var startingInstructions = '';
   var feedback = '';
-  var cuedRefreshInstructions = '';
+  var cuedRefreshInstructions = 'You are about to perform ';
   var accuracy = Math.round((accuracyCount / trialThreshold) * 100);
+  
 
   accuracyCount = 0;
 
+  // multiply by 60 bc you need it as a proportion of seconds in a min
+  blockTimeSeconds = blockTime < 60 ? Math.round(blockTime) : Math.round(((blockTime / 60) % 1) * 60)
+
   // things to do if it's not the first block of the experiment
   if (blockCount) {
-    feedback = '<p>You completed that last group in ' + String(Math.round(blockTime / 60)) + ' minutes  and ' + String(Math.round((blockTime % 1) * 60)  ' seconds with an accuracy of ' + String(accuracy) + '%';
+    feedback = '<p>You completed that last group in ' + String(Math.round(blockTime / 60)) + ' minutes and ' + String(blockTimeSeconds) + ' seconds with an accuracy of ' + String(accuracy) + '%</p><br>';
     blockStruct.push({
       'cycle': cycleCount,
       'blockTime': blockTime,
@@ -163,11 +167,11 @@ function blockTransition() {
 
     // conditional instructions for if they're just starting
     if (cycleCount == 0) {
-      startingInstructions = '<p>The experiment is broken up into a total of ' + String(4 * cycleThreshold) + ' groups.</p>';
+      startingInstructions = '<p>The experiment is broken up into a total of ' + String(4 * cycleThreshold) + ' groups. Between some of these groups, you will perform simple task switching like you just did in that last practice phase. You will see instructions before each group that will let you know when this will happen.</p><br>';
     } else {
       cuedRefreshTrigger = 1;
-      cuedRefreshInstructions = '<p>You will perform some short cued task trials (without decks) before the next group begins.</p>';
-    }
+      cuedRefreshInstructions = '<p>You will perform some short cued task trials (without decks) before the next group begins.</p><br><p>After this happens, you will perform ';
+    } 
 
     // if it's not end of experiment
     if (cycleCount < cycleThreshold) {
@@ -201,7 +205,8 @@ function blockTransition() {
 
 
   // general instructions
-  $('#blockInstructions').html(startingInstructions + feedback + '<p>You are about to perform Group ' + String(blockCount + (cycleCount - 1) * 4) + ' of ' + String(cycleThreshold * 4) + '. Please press "Continue" when you are ready to start this group.</p>' + cuedRefreshInstructions);
+  var generalInstructions = 'Group ' + String(blockCount + (cycleCount - 1) * 4) + ' of ' + String(cycleThreshold * 4) + '. Please press "Continue" when you are ready to start this group.</p><br>';
+  $('#blockInstructions').html(startingInstructions + feedback + cuedRefreshInstructions + generalInstructions);
   $('#blockTransitionSlide').show();
   $('.expSlide').hide();
   $('.stimSlide').hide();
@@ -302,7 +307,7 @@ function cuedTrial() {
       cuedId = 'inDst';
       cuedUpdateVars(i.which);
 
-
+      console.log('accuracy count: ' + String(accuracyCount));
       // start error sequence
       if (error) {
         // fill and display feedback
@@ -396,6 +401,7 @@ function cuedRefreshTrial() {
             if (CuedRefreshTrialCount < cuedRefreshTrialThreshold) {
               cuedRefreshTrial();
             } else {
+              accuracyCount = 0;
               $('.stimSlide').hide();
               $('.expSlide').show();
               blockTime = new Date();
@@ -408,6 +414,7 @@ function cuedRefreshTrial() {
           if (CuedRefreshTrialCount < cuedRefreshTrialThreshold) {
             cuedRefreshTrial();
           } else {
+            accuracyCount = 0;
             $('.stimSlide').hide();
             $('.expSlide').show();
             blockTime = new Date();
@@ -440,6 +447,7 @@ function cuedUpdateVars(responseKey) {
   $(document).unbind('keydown.listenForResponseKeys');
   // code error
   error = cuedIsError(String(responseKey), currentTask, currentStim);
+  accuracyCount += error == 0 ? 1 : 0;
   // code transition
   transition = codeTransition(prevTaskColor, currentTaskColor);
   // update previous task color
