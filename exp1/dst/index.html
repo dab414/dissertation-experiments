@@ -20,9 +20,13 @@ $(document).ready(function(){
 // GLOBAL VARS
 
 // thresholds
-var cycleThreshold = 4;
 var cuedRefreshTrialThreshold = 16;
-var trialThreshold = 5;
+// how many trials per block
+var trialThreshold = 100;
+// there are always 4 blocks per cycle
+// how many total cycles 
+var cycleThreshold = 4;
+
 
 
 // parse url args
@@ -83,6 +87,23 @@ $('.expSlide').hide();
 $('#blockTransitionSlide').hide();
 $('.stimSlide').hide();
 
+$('#development').hide();
+
+if (!IsOnTurk()) {
+    $('#titleSlide').hide();
+    $('#development').show();
+    $('#submitDevelopment').click(function(){
+      if ($('input[name = expLength]:checked').val() == 'short') {
+        trialThreshold = 10;
+        cycleThreshold = 2;
+      }
+
+      $('#development').hide();
+      $('#titleSlide').show();
+      console.log('Trial Threshold: ' + String(trialThreshold));
+      console.log('Cycle Threshold: ' + String(cycleThreshold));
+    });
+  }
 
 // button controls
 $('#detail').click(function(){
@@ -556,6 +577,14 @@ function sendToServer(curId, currentData) {
 <div class='container'>
   <!-- the 800 X 600 experiment area -->
   <div class='screen'>
+
+    <!-- BEGIN DEVELOPMENT SLIDE -->
+      <div id='development'>
+        <p>Looks like you're not on turk, so I'm guessing you're testing. Do you want to do the full length phase, or a shortened one?</p>
+        <input type='radio' name='expLength' value='regular' checked>Regular<br>
+        <input type='radio' name='expLength' value='short'>Shortened<br>
+        <button id='submitDevelopment' class='experimentButton'>Submit</button>
+      </div>
 
     <!-- BEGIN TITLE SLIDE -->
     <div id='titleSlide'>
